@@ -23,6 +23,9 @@ public final class DiffWebViewCoordinator: NSObject {
   /// Callback when a line is clicked, with position data for UI overlay positioning
   var onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)?
 
+  /// Callback when a range of lines is selected via drag
+  var onLineSelectionChange: ((LineSelectionRange) -> Void)?
+
   /// Callback when expand is requested
   var onExpandRequest: (() -> Void)?
 
@@ -49,11 +52,13 @@ public final class DiffWebViewCoordinator: NSObject {
   init(
     onLineClick: ((Int, String) -> Void)? = nil,
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
+    onLineSelectionChange: ((LineSelectionRange) -> Void)? = nil,
     onExpandRequest: (() -> Void)? = nil,
     onReady: (() -> Void)? = nil
   ) {
     self.onLineClick = onLineClick
     self.onLineClickWithPosition = onLineClickWithPosition
+    self.onLineSelectionChange = onLineSelectionChange
     self.onExpandRequest = onExpandRequest
     self.onReady = onReady
     super.init()
@@ -244,6 +249,12 @@ public final class DiffWebViewCoordinator: NSObject {
 
     case .selectionChanged(let startLine, let endLine, let side):
       DiffLogger.info("Selection changed: lines \(startLine)-\(endLine) on \(side)")
+      let selection = LineSelectionRange(
+        startLine: startLine,
+        endLine: endLine,
+        side: side
+      )
+      onLineSelectionChange?(selection)
 
     case .systemThemeChanged(let isDark):
       DiffLogger.info("System theme changed: isDark=\(isDark)")
