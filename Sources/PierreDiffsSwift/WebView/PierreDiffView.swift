@@ -163,6 +163,10 @@ public struct PierreDiffView: NSViewRepresentable {
     )
   }
 
+  public static func dismantleNSView(_ nsView: WKWebView, coordinator: DiffWebViewCoordinator) {
+    coordinator.cleanup()
+  }
+
   // MARK: - Private Helpers
 
   private var themeForColorScheme: String {

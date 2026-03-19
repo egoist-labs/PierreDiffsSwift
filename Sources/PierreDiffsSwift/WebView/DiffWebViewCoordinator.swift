@@ -147,9 +147,18 @@ public final class DiffWebViewCoordinator: NSObject {
     }
   }
 
-  /// Cleans up the diff instance
+  /// Cleans up the diff instance and releases WebKit resources
   func cleanup() {
-    evaluateJavaScript("window.pierreBridge.cleanup()")
+    webView?.stopLoading()
+    webView?.navigationDelegate = nil
+    webView?.configuration.userContentController.removeAllScriptMessageHandlers()
+    webView?.removeFromSuperview()
+    webView = nil
+    onLineClick = nil
+    onLineClickWithPosition = nil
+    onLineSelectionChange = nil
+    onExpandRequest = nil
+    onReady = nil
   }
 
   // MARK: - Private Methods
