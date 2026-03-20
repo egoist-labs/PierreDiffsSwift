@@ -23,6 +23,7 @@ This is how we use it in [Claw](https://github.com/jamesrochabrun/Claw)
 - Dark/light theme support (auto-detects system preference)
 - Scroll or wrap overflow modes
 - Line click callbacks for custom interactions
+- Multi-line drag selection with range callbacks
 - SwiftUI-native views wrapping WKWebView
 
 ## Requirements
@@ -87,6 +88,7 @@ PierreDiffView(
     overflowMode: Binding<OverflowMode>,
     onLineClick: ((Int, String) -> Void)? = nil,
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
+    onLineSelectionChange: ((LineSelectionRange) -> Void)? = nil,
     onExpandRequest: (() -> Void)? = nil
 )
 ```
@@ -165,6 +167,18 @@ struct LineClickPosition {
     let side: String        // "left", "right", or "unified"
     let lineY: CGFloat      // Y position in view coordinates
     let lineHeight: CGFloat // Estimated line height
+}
+```
+
+#### `LineSelectionRange`
+
+Data about a multi-line drag selection in the diff view.
+
+```swift
+struct LineSelectionRange {
+    let startLine: Int  // First line in the selection
+    let endLine: Int    // Last line in the selection
+    let side: String    // "left", "right", or "unified"
 }
 ```
 
@@ -255,6 +269,22 @@ PierreDiffView(
         // localPoint is in SwiftUI coordinates (origin top-left)
         // Use to position floating editors, popovers, tooltips, etc.
         print("Clicked line \(position.lineNumber) at \(localPoint)")
+    }
+)
+```
+
+### Multi-Line Drag Selection
+
+```swift
+PierreDiffView(
+    oldContent: oldText,
+    newContent: newText,
+    fileName: "example.swift",
+    diffStyle: $diffStyle,
+    overflowMode: $overflowMode,
+    onLineSelectionChange: { selection in
+        // Fired when the user drags across line numbers to select a range
+        print("Selected lines \(selection.startLine)-\(selection.endLine) on \(selection.side)")
     }
 )
 ```
