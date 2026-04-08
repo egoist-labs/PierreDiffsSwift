@@ -75,10 +75,14 @@ public struct PierreDiffInput: Codable, Sendable {
   /// Rendering options
   public let options: Options
 
-  public init(oldFile: FileContents, newFile: FileContents, options: Options) {
+  /// Optional line annotations for inline comments
+  public let lineAnnotations: [DiffAnnotation]?
+
+  public init(oldFile: FileContents, newFile: FileContents, options: Options, lineAnnotations: [DiffAnnotation]? = nil) {
     self.oldFile = oldFile
     self.newFile = newFile
     self.options = options
+    self.lineAnnotations = lineAnnotations
   }
 }
 

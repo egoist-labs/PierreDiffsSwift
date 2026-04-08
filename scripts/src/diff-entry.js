@@ -147,6 +147,59 @@ function detectLanguage(fileName) {
 }
 
 /**
+ * Creates a DOM element for an inline annotation (comment).
+ * Called by @pierre/diffs renderAnnotation callback.
+ */
+function createAnnotationDOM(annotation) {
+  const { metadata } = annotation;
+  if (!metadata) return document.createElement('div');
+
+  const container = document.createElement('div');
+  container.className = 'pierre-annotation';
+  container.dataset.annotationId = metadata.id || '';
+
+  const header = document.createElement('div');
+  header.className = 'pierre-annotation-header';
+
+  const authorSpan = document.createElement('span');
+  authorSpan.textContent = metadata.author || 'Unknown';
+  header.appendChild(authorSpan);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'pierre-annotation-delete';
+  deleteBtn.textContent = '\u00D7';
+  deleteBtn.title = 'Delete annotation';
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    postToSwift('annotationDeleteRequested', {
+      id: metadata.id || '',
+      side: annotation.side || '',
+      lineNumber: annotation.lineNumber || 0,
+    });
+  });
+  header.appendChild(deleteBtn);
+
+  const body = document.createElement('div');
+  body.className = 'pierre-annotation-body';
+  body.textContent = metadata.body || '';
+
+  container.appendChild(header);
+  container.appendChild(body);
+
+  // Post click event to Swift
+  container.addEventListener('click', (e) => {
+    e.stopPropagation();
+    postToSwift('annotationClicked', {
+      id: metadata.id || '',
+      side: annotation.side || '',
+      lineNumber: annotation.lineNumber || 0,
+    });
+  });
+
+  return container;
+}
+
+/**
  * Bridge object exposed to Swift
  */
 window.pierreBridge = {
@@ -212,6 +265,9 @@ window.pierreBridge = {
         lineDiffType: 'word-alt',
         overflow: currentOverflow,
         enableLineSelection: options.enableLineSelection ?? true,
+        renderAnnotation(annotation) {
+          return createAnnotationDOM(annotation);
+        },
         onLineClick: ({ lineNumber, side }) => {
           // Send line info to Swift - positioning is handled via NSEvent.mouseLocation
           postToSwift('lineClicked', { lineNumber, side, lineY: 0, lineHeight: 22 });
@@ -232,6 +288,7 @@ window.pierreBridge = {
         oldFile: oldFileObj,
         newFile: newFileObj,
         containerWrapper: container,
+        lineAnnotations: input.lineAnnotations || [],
       });
 
       postToSwift('ready');
@@ -306,6 +363,31 @@ window.pierreBridge = {
    */
   getSelection() {
     return window.getSelection()?.toString() || '';
+  },
+
+  /**
+   * Sets line annotations dynamically without full re-render
+   * @param {object|string} annotationsData - Array of annotations (object or JSON string)
+   */
+  setAnnotations(annotationsData) {
+    if (!currentDiffInstance) return;
+    try {
+      const annotations = typeof annotationsData === 'string'
+        ? JSON.parse(annotationsData)
+        : annotationsData;
+      currentDiffInstance.setLineAnnotations(annotations);
+    } catch (error) {
+      console.error('Error setting annotations:', error);
+      postToSwift('error', { message: error.message });
+    }
+  },
+
+  /**
+   * Removes all line annotations
+   */
+  removeAnnotations() {
+    if (!currentDiffInstance) return;
+    currentDiffInstance.setLineAnnotations([]);
   },
 
   /**

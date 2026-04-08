@@ -24,6 +24,12 @@ enum DiffWebViewEvent {
   /// System theme changed
   case systemThemeChanged(isDark: Bool)
 
+  /// An annotation was clicked
+  case annotationClicked(id: String, side: String, lineNumber: Int)
+
+  /// An annotation delete was requested
+  case annotationDeleteRequested(id: String, side: String, lineNumber: Int)
+
   /// An error occurred in the JavaScript layer
   case error(message: String)
 }

@@ -22,8 +22,10 @@ This is how we use it in [Claw](https://github.com/jamesrochabrun/Claw)
 - Inline word-level change highlighting
 - Dark/light theme support (auto-detects system preference)
 - Scroll or wrap overflow modes
-- Line click callbacks for custom interactions
+- Line click callbacks with position data for overlay positioning
 - Multi-line drag selection with range callbacks
+- Inline annotations (comments) rendered inside the diff
+- Annotation click and delete callbacks for interactive review flows
 - SwiftUI-native views wrapping WKWebView
 
 ## Requirements
@@ -81,17 +83,39 @@ Low-level SwiftUI view that renders diffs using WKWebView and the @pierre/diffs 
 
 ```swift
 PierreDiffView(
-    oldContent: String,           // Original file content
-    newContent: String,           // Updated file content
-    fileName: String,             // Filename for syntax detection
+    oldContent: String,
+    newContent: String,
+    fileName: String,
     diffStyle: Binding<DiffStyle>,
     overflowMode: Binding<OverflowMode>,
+    annotations: [DiffAnnotation]? = nil,
     onLineClick: ((Int, String) -> Void)? = nil,
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
     onLineSelectionChange: ((LineSelectionRange) -> Void)? = nil,
-    onExpandRequest: (() -> Void)? = nil
+    onAnnotationClick: ((String, String, Int, CGPoint) -> Void)? = nil,
+    onAnnotationDelete: ((String, String, Int) -> Void)? = nil,
+    onExpandRequest: (() -> Void)? = nil,
+    onReady: (() -> Void)? = nil
 )
 ```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `oldContent` | `String` | Original file content (before changes) |
+| `newContent` | `String` | Updated file content (after changes) |
+| `fileName` | `String` | Filename used for syntax highlighting detection |
+| `diffStyle` | `Binding<DiffStyle>` | `.split` or `.unified` |
+| `overflowMode` | `Binding<OverflowMode>` | `.scroll` or `.wrap` |
+| `annotations` | `[DiffAnnotation]?` | Inline annotations rendered below diff lines |
+| `onLineClick` | `((Int, String) -> Void)?` | Simple line click (lineNumber, side) |
+| `onLineClickWithPosition` | `((LineClickPosition, CGPoint) -> Void)?` | Line click with position for overlay placement |
+| `onLineSelectionChange` | `((LineSelectionRange) -> Void)?` | Multi-line drag selection range |
+| `onAnnotationClick` | `((String, String, Int, CGPoint) -> Void)?` | Annotation clicked (id, side, lineNumber, localPoint) |
+| `onAnnotationDelete` | `((String, String, Int) -> Void)?` | Annotation delete requested (id, side, lineNumber) |
+| `onExpandRequest` | `(() -> Void)?` | View requests full-screen expansion |
+| `onReady` | `(() -> Void)?` | WebView finished loading and rendered the diff |
 
 #### `DiffEditsView`
 
@@ -154,6 +178,37 @@ enum DiffStyle: String, CaseIterable {
 enum OverflowMode: String, CaseIterable {
     case scroll  // Horizontal scrolling for long lines
     case wrap    // Word wrap long lines
+}
+```
+
+#### `DiffAnnotation`
+
+An inline annotation attached to a specific line in the diff.
+
+```swift
+struct DiffAnnotation: Codable, Sendable, Equatable {
+    let side: AnnotationSide    // .deletions or .additions
+    let lineNumber: Int         // Line number to attach to
+    let metadata: AnnotationMetadata
+}
+```
+
+#### `AnnotationSide`
+
+```swift
+enum AnnotationSide: String, Codable, Sendable {
+    case deletions   // Left side (old file)
+    case additions   // Right side (new file)
+}
+```
+
+#### `AnnotationMetadata`
+
+```swift
+struct AnnotationMetadata: Codable, Sendable, Equatable {
+    let id: String      // Unique identifier (defaults to UUID)
+    let author: String  // Display name
+    let body: String    // Comment text
 }
 ```
 
@@ -285,6 +340,89 @@ PierreDiffView(
     onLineSelectionChange: { selection in
         // Fired when the user drags across line numbers to select a range
         print("Selected lines \(selection.startLine)-\(selection.endLine) on \(selection.side)")
+    }
+)
+```
+
+### Inline Annotations
+
+```swift
+let annotations = [
+    DiffAnnotation(
+        side: .additions,
+        lineNumber: 5,
+        metadata: AnnotationMetadata(author: "Alice", body: "Consider adding error handling here")
+    ),
+    DiffAnnotation(
+        side: .deletions,
+        lineNumber: 12,
+        metadata: AnnotationMetadata(author: "Bob", body: "Why was this removed?")
+    )
+]
+
+PierreDiffView(
+    oldContent: oldText,
+    newContent: newText,
+    fileName: "example.swift",
+    diffStyle: $diffStyle,
+    overflowMode: $overflowMode,
+    annotations: annotations,
+    onAnnotationClick: { id, side, lineNumber, localPoint in
+        // User clicked the annotation body — open editor overlay at localPoint
+        print("Annotation \(id) clicked at \(localPoint)")
+    },
+    onAnnotationDelete: { id, side, lineNumber in
+        // User clicked the X button on the annotation
+        // Remove from your state — the annotation disappears reactively
+        print("Delete annotation \(id)")
+    }
+)
+```
+
+### Interactive Code Review (Full Pattern)
+
+Build a GitHub PR-style inline review experience:
+
+```swift
+@Observable class ReviewState {
+    var comments: [String: ReviewComment] = [:]
+
+    func annotations(for fileName: String) -> [DiffAnnotation] {
+        comments.values
+            .filter { $0.fileName == fileName }
+            .map { comment in
+                DiffAnnotation(
+                    side: comment.side == "left" ? .deletions : .additions,
+                    lineNumber: comment.lineNumber,
+                    metadata: AnnotationMetadata(
+                        id: comment.id.uuidString,
+                        author: "You",
+                        body: comment.text
+                    )
+                )
+            }
+    }
+}
+
+// In your view:
+PierreDiffView(
+    oldContent: oldText,
+    newContent: newText,
+    fileName: filePath,
+    diffStyle: $diffStyle,
+    overflowMode: $overflowMode,
+    annotations: reviewState.annotations(for: filePath),
+    onLineClickWithPosition: { position, localPoint in
+        // Show editor overlay for new comment
+        editorState.show(at: localPoint, lineNumber: position.lineNumber, side: position.side)
+    },
+    onAnnotationClick: { id, side, lineNumber, localPoint in
+        // Show editor overlay for editing existing comment
+        editorState.showEdit(at: localPoint, annotationId: id)
+    },
+    onAnnotationDelete: { id, side, lineNumber in
+        // Remove comment — annotation disappears via SwiftUI reactivity
+        reviewState.removeComment(id: id)
     }
 )
 ```
