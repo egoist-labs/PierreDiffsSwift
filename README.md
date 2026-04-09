@@ -207,9 +207,10 @@ enum AnnotationSide: String, Codable, Sendable {
 ```swift
 struct AnnotationMetadata: Codable, Sendable, Equatable {
     let id: String         // Unique identifier (defaults to UUID)
-    let author: String     // Display name
+    let author: String     // Display name (used for image alt text)
     let body: String       // Comment text
-    let avatarURL: String? // Optional avatar image URL (letter fallback when nil)
+    let avatarURL: String? // Optional avatar image URL (SVG person icon when nil)
+    let subtitle: String?  // Optional subtitle shown above body (e.g. "Code review: line 42")
 }
 ```
 
