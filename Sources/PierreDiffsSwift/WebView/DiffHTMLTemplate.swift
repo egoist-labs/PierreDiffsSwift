@@ -163,5 +163,81 @@ enum DiffHTMLTemplate {
   .diffs-header {
     display: none;
   }
+
+  /* Inline annotation styles */
+  .pierre-annotation {
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-left: 3px solid rgba(59, 130, 246, 0.7);
+    background-color: rgba(59, 130, 246, 0.06);
+    border-radius: 0 4px 4px 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .pierre-annotation:hover {
+    background-color: rgba(59, 130, 246, 0.12);
+  }
+
+  .pierre-annotation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: rgba(59, 130, 246, 0.9);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .pierre-annotation-delete {
+    display: none;
+    border: none;
+    background: none;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 3px;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+  }
+
+  .pierre-annotation:hover .pierre-annotation-delete {
+    display: inline-flex;
+  }
+
+  .pierre-annotation-delete:hover {
+    opacity: 1;
+    background-color: rgba(239, 68, 68, 0.15);
+    color: rgba(239, 68, 68, 0.9);
+  }
+
+  .pierre-annotation-body {
+    color: inherit;
+    opacity: 0.85;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .pierre-annotation {
+      border-left-color: rgba(96, 165, 250, 0.7);
+      background-color: rgba(96, 165, 250, 0.08);
+    }
+
+    .pierre-annotation:hover {
+      background-color: rgba(96, 165, 250, 0.14);
+    }
+
+    .pierre-annotation-header {
+      color: rgba(96, 165, 250, 0.9);
+    }
+  }
   """
 }

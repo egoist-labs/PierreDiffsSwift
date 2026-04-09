@@ -47,6 +47,15 @@ public struct PierreDiffView: NSViewRepresentable {
   /// Callback when the view requests expansion to full screen
   var onExpandRequest: (() -> Void)?
 
+  /// Inline annotations to display on the diff
+  var annotations: [DiffAnnotation]?
+
+  /// Callback when an annotation is clicked (id, side, lineNumber, localPoint)
+  var onAnnotationClick: ((String, String, Int, CGPoint) -> Void)?
+
+  /// Callback when an annotation delete is requested (id, side, lineNumber)
+  var onAnnotationDelete: ((String, String, Int) -> Void)?
+
   /// Callback when the WebView is ready to display content
   var onReady: (() -> Void)?
 
@@ -62,9 +71,12 @@ public struct PierreDiffView: NSViewRepresentable {
     fileName: String,
     diffStyle: Binding<DiffStyle>,
     overflowMode: Binding<OverflowMode>,
+    annotations: [DiffAnnotation]? = nil,
     onLineClick: ((Int, String) -> Void)? = nil,
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
     onLineSelectionChange: ((LineSelectionRange) -> Void)? = nil,
+    onAnnotationClick: ((String, String, Int, CGPoint) -> Void)? = nil,
+    onAnnotationDelete: ((String, String, Int) -> Void)? = nil,
     onExpandRequest: (() -> Void)? = nil,
     onReady: (() -> Void)? = nil
   ) {
@@ -73,9 +85,12 @@ public struct PierreDiffView: NSViewRepresentable {
     self.fileName = fileName
     self._diffStyle = diffStyle
     self._overflowMode = overflowMode
+    self.annotations = annotations
     self.onLineClick = onLineClick
     self.onLineClickWithPosition = onLineClickWithPosition
     self.onLineSelectionChange = onLineSelectionChange
+    self.onAnnotationClick = onAnnotationClick
+    self.onAnnotationDelete = onAnnotationDelete
     self.onExpandRequest = onExpandRequest
     self.onReady = onReady
   }
@@ -128,18 +143,23 @@ public struct PierreDiffView: NSViewRepresentable {
     let currentTheme = themeForColorScheme
     let themeChanged = coordinator.lastTheme != currentTheme
 
+    // Check if annotations have changed
+    let annotationsChanged = coordinator.lastAnnotations != annotations
+
     if contentChanged {
       coordinator.lastOldContent = oldContent
       coordinator.lastNewContent = newContent
       coordinator.lastFileName = fileName
       coordinator.lastOverflowMode = overflowMode
+      coordinator.lastAnnotations = annotations
       coordinator.renderDiff(
         oldContent: oldContent,
         newContent: newContent,
         fileName: fileName,
         theme: currentTheme,
         diffStyle: diffStyle,
-        overflowMode: overflowMode
+        overflowMode: overflowMode,
+        annotations: annotations
       )
     } else if styleChanged {
       coordinator.lastDiffStyle = diffStyle
@@ -151,6 +171,15 @@ public struct PierreDiffView: NSViewRepresentable {
       coordinator.lastTheme = currentTheme
       coordinator.setTheme(currentTheme)
     }
+
+    if !contentChanged && annotationsChanged {
+      coordinator.lastAnnotations = annotations
+      if let annotations, !annotations.isEmpty {
+        coordinator.setAnnotations(annotations)
+      } else {
+        coordinator.removeAnnotations()
+      }
+    }
   }
 
   public func makeCoordinator() -> DiffWebViewCoordinator {
@@ -159,7 +188,9 @@ public struct PierreDiffView: NSViewRepresentable {
       onLineClickWithPosition: onLineClickWithPosition,
       onLineSelectionChange: onLineSelectionChange,
       onExpandRequest: onExpandRequest,
-      onReady: onReady
+      onReady: onReady,
+      onAnnotationClick: onAnnotationClick,
+      onAnnotationDelete: onAnnotationDelete
     )
   }
 

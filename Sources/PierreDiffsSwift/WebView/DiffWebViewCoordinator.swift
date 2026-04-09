@@ -32,6 +32,12 @@ public final class DiffWebViewCoordinator: NSObject {
   /// Callback when the WebView is ready to display content
   var onReady: (() -> Void)?
 
+  /// Callback when an annotation is clicked (id, side, lineNumber, localPoint)
+  var onAnnotationClick: ((String, String, Int, CGPoint) -> Void)?
+
+  /// Callback when an annotation delete is requested (id, side, lineNumber)
+  var onAnnotationDelete: ((String, String, Int) -> Void)?
+
   /// Whether the web view has finished loading and is ready
   private(set) var isReady = false
 
@@ -46,6 +52,7 @@ public final class DiffWebViewCoordinator: NSObject {
   var lastDiffStyle: DiffStyle?
   var lastOverflowMode: OverflowMode?
   var lastTheme: String?
+  var lastAnnotations: [DiffAnnotation]?
 
   // MARK: - Initialization
 
@@ -54,13 +61,17 @@ public final class DiffWebViewCoordinator: NSObject {
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
     onLineSelectionChange: ((LineSelectionRange) -> Void)? = nil,
     onExpandRequest: (() -> Void)? = nil,
-    onReady: (() -> Void)? = nil
+    onReady: (() -> Void)? = nil,
+    onAnnotationClick: ((String, String, Int, CGPoint) -> Void)? = nil,
+    onAnnotationDelete: ((String, String, Int) -> Void)? = nil
   ) {
     self.onLineClick = onLineClick
     self.onLineClickWithPosition = onLineClickWithPosition
     self.onLineSelectionChange = onLineSelectionChange
     self.onExpandRequest = onExpandRequest
     self.onReady = onReady
+    self.onAnnotationClick = onAnnotationClick
+    self.onAnnotationDelete = onAnnotationDelete
     super.init()
   }
 
@@ -87,7 +98,8 @@ public final class DiffWebViewCoordinator: NSObject {
     fileName: String,
     theme: String,
     diffStyle: DiffStyle,
-    overflowMode: OverflowMode = .scroll
+    overflowMode: OverflowMode = .scroll,
+    annotations: [DiffAnnotation]? = nil
   ) {
     let input = PierreDiffInput(
       oldFile: PierreDiffInput.FileContents(
@@ -108,7 +120,8 @@ public final class DiffWebViewCoordinator: NSObject {
         diffStyle: diffStyle.rawValue,
         overflow: overflowMode.rawValue,
         enableLineSelection: true
-      )
+      ),
+      lineAnnotations: annotations
     )
 
     executeWhenReady { [weak self] in
@@ -140,6 +153,20 @@ public final class DiffWebViewCoordinator: NSObject {
     }
   }
 
+  /// Sets line annotations dynamically
+  func setAnnotations(_ annotations: [DiffAnnotation]) {
+    executeWhenReady { [weak self] in
+      self?.callJavaScript("setAnnotations", with: annotations)
+    }
+  }
+
+  /// Removes all line annotations
+  func removeAnnotations() {
+    executeWhenReady { [weak self] in
+      self?.evaluateJavaScript("window.pierreBridge.removeAnnotations()")
+    }
+  }
+
   /// Scrolls to a specific line
   func scrollToLine(_ line: Int) {
     executeWhenReady { [weak self] in
@@ -159,6 +186,8 @@ public final class DiffWebViewCoordinator: NSObject {
     onLineSelectionChange = nil
     onExpandRequest = nil
     onReady = nil
+    onAnnotationClick = nil
+    onAnnotationDelete = nil
   }
 
   // MARK: - Private Methods
@@ -265,6 +294,23 @@ public final class DiffWebViewCoordinator: NSObject {
       )
       onLineSelectionChange?(selection)
 
+    case .annotationClicked(let id, let side, let lineNumber):
+      DiffLogger.info("Annotation clicked: id=\(id), side=\(side), line=\(lineNumber)")
+      if let onAnnotationClick {
+        let screenPoint = NSEvent.mouseLocation
+        if let webView, let window = webView.window {
+          let webViewFrameInWindow = webView.convert(webView.bounds, to: nil)
+          let windowPoint = window.convertPoint(fromScreen: screenPoint)
+          let relativeX = windowPoint.x - webViewFrameInWindow.minX
+          let relativeY = webViewFrameInWindow.maxY - windowPoint.y
+          onAnnotationClick(id, side, lineNumber, CGPoint(x: relativeX, y: relativeY))
+        }
+      }
+
+    case .annotationDeleteRequested(let id, let side, let lineNumber):
+      DiffLogger.info("Annotation delete requested: id=\(id), side=\(side), line=\(lineNumber)")
+      onAnnotationDelete?(id, side, lineNumber)
+
     case .systemThemeChanged(let isDark):
       DiffLogger.info("System theme changed: isDark=\(isDark)")
 
@@ -332,6 +378,18 @@ extension DiffWebViewCoordinator: WKScriptMessageHandler {
       let endLine = body["endLine"] as? Int ?? 0
       let side = body["side"] as? String ?? "unknown"
       event = .selectionChanged(startLine: startLine, endLine: endLine, side: side)
+
+    case "annotationClicked":
+      let id = body["id"] as? String ?? ""
+      let side = body["side"] as? String ?? ""
+      let lineNumber = body["lineNumber"] as? Int ?? 0
+      event = .annotationClicked(id: id, side: side, lineNumber: lineNumber)
+
+    case "annotationDeleteRequested":
+      let id = body["id"] as? String ?? ""
+      let side = body["side"] as? String ?? ""
+      let lineNumber = body["lineNumber"] as? Int ?? 0
+      event = .annotationDeleteRequested(id: id, side: side, lineNumber: lineNumber)
 
     case "systemThemeChanged":
       let isDark = body["isDark"] as? Bool ?? false
