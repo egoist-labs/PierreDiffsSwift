@@ -168,36 +168,40 @@ enum DiffHTMLTemplate {
   .pierre-annotation {
     margin: 6px 4px;
     padding: 10px 12px;
-    border: 1px solid rgba(140, 140, 160, 0.2);
+    border: 1px solid rgba(140, 140, 160, 0.18);
     border-radius: 8px;
-    background-color: rgba(140, 140, 160, 0.05);
+    background-color: rgba(255, 255, 255, 0.9);
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     font-size: 12px;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   .pierre-annotation:hover {
-    background-color: rgba(140, 140, 160, 0.1);
+    background-color: rgba(255, 255, 255, 0.95);
     border-color: rgba(140, 140, 160, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), 0 2px 4px rgba(0, 0, 0, 0.08);
   }
 
   .pierre-annotation-row {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: flex-start;
   }
 
   .pierre-annotation-avatar {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     flex-shrink: 0;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(96, 165, 250, 0.2);
+    background-color: rgba(96, 165, 250, 0.15);
+    color: rgba(96, 165, 250, 0.8);
+    margin-top: 1px;
   }
 
   .pierre-annotation-avatar img {
@@ -207,11 +211,9 @@ enum DiffHTMLTemplate {
     border-radius: 50%;
   }
 
-  .pierre-annotation-avatar span {
-    font-weight: 600;
-    font-size: 11px;
-    color: rgba(96, 165, 250, 0.9);
-    line-height: 1;
+  .pierre-annotation-avatar svg {
+    width: 14px;
+    height: 14px;
   }
 
   .pierre-annotation-content {
@@ -226,11 +228,11 @@ enum DiffHTMLTemplate {
     margin-bottom: 2px;
   }
 
-  .pierre-annotation-author {
-    font-weight: 600;
-    font-size: 12px;
+  .pierre-annotation-subtitle {
+    font-weight: 500;
+    font-size: 11px;
     color: inherit;
-    opacity: 0.95;
+    opacity: 0.5;
   }
 
   .pierre-annotation-delete {
@@ -268,17 +270,20 @@ enum DiffHTMLTemplate {
 
   @media (prefers-color-scheme: dark) {
     .pierre-annotation {
-      border-color: rgba(200, 200, 220, 0.12);
-      background-color: rgba(200, 200, 220, 0.04);
+      border-color: rgba(200, 200, 220, 0.1);
+      background-color: rgba(30, 32, 38, 0.9);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
     }
 
     .pierre-annotation:hover {
-      background-color: rgba(200, 200, 220, 0.08);
-      border-color: rgba(200, 200, 220, 0.2);
+      background-color: rgba(36, 38, 46, 0.95);
+      border-color: rgba(200, 200, 220, 0.18);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
     .pierre-annotation-avatar {
-      background-color: rgba(96, 165, 250, 0.15);
+      background-color: rgba(96, 165, 250, 0.12);
+      color: rgba(96, 165, 250, 0.7);
     }
   }
   """

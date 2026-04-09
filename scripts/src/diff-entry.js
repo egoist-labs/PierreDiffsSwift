@@ -154,8 +154,6 @@ function createAnnotationDOM(annotation) {
   const { metadata } = annotation;
   if (!metadata) return document.createElement('div');
 
-  const authorName = metadata.author || 'Unknown';
-
   const container = document.createElement('div');
   container.className = 'pierre-annotation';
   container.dataset.annotationId = metadata.id || '';
@@ -163,18 +161,16 @@ function createAnnotationDOM(annotation) {
   const row = document.createElement('div');
   row.className = 'pierre-annotation-row';
 
-  // Avatar
+  // Avatar — SVG person icon (or image if avatarURL provided)
   const avatar = document.createElement('div');
   avatar.className = 'pierre-annotation-avatar';
   if (metadata.avatarURL) {
     const img = document.createElement('img');
     img.src = metadata.avatarURL;
-    img.alt = authorName;
+    img.alt = metadata.author || '';
     avatar.appendChild(img);
   } else {
-    const letter = document.createElement('span');
-    letter.textContent = authorName.charAt(0).toUpperCase();
-    avatar.appendChild(letter);
+    avatar.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4Z"/></svg>';
   }
 
   // Content
@@ -184,10 +180,13 @@ function createAnnotationDOM(annotation) {
   const header = document.createElement('div');
   header.className = 'pierre-annotation-header';
 
-  const authorSpan = document.createElement('span');
-  authorSpan.className = 'pierre-annotation-author';
-  authorSpan.textContent = authorName;
-  header.appendChild(authorSpan);
+  // Subtitle (line info)
+  if (metadata.subtitle) {
+    const subtitleSpan = document.createElement('span');
+    subtitleSpan.className = 'pierre-annotation-subtitle';
+    subtitleSpan.textContent = metadata.subtitle;
+    header.appendChild(subtitleSpan);
+  }
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'pierre-annotation-delete';

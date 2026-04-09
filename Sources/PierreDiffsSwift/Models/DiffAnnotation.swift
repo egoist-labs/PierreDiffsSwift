@@ -33,11 +33,13 @@ public struct AnnotationMetadata: Codable, Sendable, Equatable {
   public let author: String
   public let body: String
   public let avatarURL: String?
+  public let subtitle: String?
 
-  public init(id: String = UUID().uuidString, author: String, body: String, avatarURL: String? = nil) {
+  public init(id: String = UUID().uuidString, author: String, body: String, avatarURL: String? = nil, subtitle: String? = nil) {
     self.id = id
     self.author = author
     self.body = body
     self.avatarURL = avatarURL
+    self.subtitle = subtitle
   }
 }
