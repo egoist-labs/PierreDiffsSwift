@@ -166,31 +166,74 @@ enum DiffHTMLTemplate {
 
   /* Inline annotation styles */
   .pierre-annotation {
-    padding: 8px 12px;
-    margin: 4px 0;
-    border-left: 3px solid rgba(59, 130, 246, 0.7);
-    background-color: rgba(59, 130, 246, 0.06);
-    border-radius: 0 4px 4px 0;
+    margin: 6px 4px;
+    padding: 10px 12px;
+    border: 1px solid rgba(140, 140, 160, 0.18);
+    border-left: 3px solid rgba(120, 87, 255, 0.8);
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.9);
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     font-size: 12px;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   .pierre-annotation:hover {
-    background-color: rgba(59, 130, 246, 0.12);
+    background-color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(140, 140, 160, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .pierre-annotation-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .pierre-annotation-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(96, 165, 250, 0.15);
+    color: rgba(96, 165, 250, 0.8);
+    margin-top: 1px;
+  }
+
+  .pierre-annotation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .pierre-annotation-avatar svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .pierre-annotation-content {
+    flex: 1;
+    min-width: 0;
   }
 
   .pierre-annotation-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-weight: 600;
     margin-bottom: 2px;
-    color: rgba(59, 130, 246, 0.9);
+  }
+
+  .pierre-annotation-subtitle {
+    font-weight: 500;
     font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
+    color: inherit;
+    opacity: 0.5;
   }
 
   .pierre-annotation-delete {
@@ -201,9 +244,9 @@ enum DiffHTMLTemplate {
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
-    padding: 0 2px;
-    border-radius: 3px;
-    opacity: 0.6;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0.5;
     transition: opacity 0.15s ease, background-color 0.15s ease;
   }
 
@@ -220,23 +263,29 @@ enum DiffHTMLTemplate {
   .pierre-annotation-body {
     color: inherit;
     opacity: 0.85;
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
   @media (prefers-color-scheme: dark) {
     .pierre-annotation {
-      border-left-color: rgba(96, 165, 250, 0.7);
-      background-color: rgba(96, 165, 250, 0.08);
+      border-color: rgba(200, 200, 220, 0.1);
+      border-left-color: rgba(120, 87, 255, 0.7);
+      background-color: rgba(30, 32, 38, 0.9);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
     }
 
     .pierre-annotation:hover {
-      background-color: rgba(96, 165, 250, 0.14);
+      background-color: rgba(36, 38, 46, 0.95);
+      border-color: rgba(200, 200, 220, 0.18);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
-    .pierre-annotation-header {
-      color: rgba(96, 165, 250, 0.9);
+    .pierre-annotation-avatar {
+      background-color: rgba(96, 165, 250, 0.12);
+      color: rgba(96, 165, 250, 0.7);
     }
   }
   """

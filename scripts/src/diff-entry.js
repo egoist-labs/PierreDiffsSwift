@@ -158,12 +158,35 @@ function createAnnotationDOM(annotation) {
   container.className = 'pierre-annotation';
   container.dataset.annotationId = metadata.id || '';
 
+  const row = document.createElement('div');
+  row.className = 'pierre-annotation-row';
+
+  // Avatar — SVG person icon (or image if avatarURL provided)
+  const avatar = document.createElement('div');
+  avatar.className = 'pierre-annotation-avatar';
+  if (metadata.avatarURL) {
+    const img = document.createElement('img');
+    img.src = metadata.avatarURL;
+    img.alt = metadata.author || '';
+    avatar.appendChild(img);
+  } else {
+    avatar.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4Z"/></svg>';
+  }
+
+  // Content
+  const content = document.createElement('div');
+  content.className = 'pierre-annotation-content';
+
   const header = document.createElement('div');
   header.className = 'pierre-annotation-header';
 
-  const authorSpan = document.createElement('span');
-  authorSpan.textContent = metadata.author || 'Unknown';
-  header.appendChild(authorSpan);
+  // Subtitle (line info)
+  if (metadata.subtitle) {
+    const subtitleSpan = document.createElement('span');
+    subtitleSpan.className = 'pierre-annotation-subtitle';
+    subtitleSpan.textContent = metadata.subtitle;
+    header.appendChild(subtitleSpan);
+  }
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'pierre-annotation-delete';
@@ -183,8 +206,11 @@ function createAnnotationDOM(annotation) {
   body.className = 'pierre-annotation-body';
   body.textContent = metadata.body || '';
 
-  container.appendChild(header);
-  container.appendChild(body);
+  content.appendChild(header);
+  content.appendChild(body);
+  row.appendChild(avatar);
+  row.appendChild(content);
+  container.appendChild(row);
 
   // Post click event to Swift
   container.addEventListener('click', (e) => {
@@ -376,6 +402,7 @@ window.pierreBridge = {
         ? JSON.parse(annotationsData)
         : annotationsData;
       currentDiffInstance.setLineAnnotations(annotations);
+      currentDiffInstance.rerender();
     } catch (error) {
       console.error('Error setting annotations:', error);
       postToSwift('error', { message: error.message });
@@ -388,6 +415,7 @@ window.pierreBridge = {
   removeAnnotations() {
     if (!currentDiffInstance) return;
     currentDiffInstance.setLineAnnotations([]);
+    currentDiffInstance.rerender();
   },
 
   /**
