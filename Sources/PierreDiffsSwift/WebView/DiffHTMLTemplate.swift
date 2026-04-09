@@ -169,6 +169,7 @@ enum DiffHTMLTemplate {
     margin: 6px 4px;
     padding: 10px 12px;
     border: 1px solid rgba(140, 140, 160, 0.18);
+    border-left: 3px solid rgba(120, 87, 255, 0.8);
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.9);
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
@@ -271,6 +272,7 @@ enum DiffHTMLTemplate {
   @media (prefers-color-scheme: dark) {
     .pierre-annotation {
       border-color: rgba(200, 200, 220, 0.1);
+      border-left-color: rgba(120, 87, 255, 0.7);
       background-color: rgba(30, 32, 38, 0.9);
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
     }
