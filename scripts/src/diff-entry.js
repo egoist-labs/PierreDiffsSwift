@@ -416,6 +416,7 @@ window.pierreBridge = {
   removeAnnotations() {
     if (!currentDiffInstance) return;
     currentDiffInstance.setLineAnnotations([]);
+    currentDiffInstance.rerender();
   },
 
   /**
