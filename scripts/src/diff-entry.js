@@ -10,6 +10,10 @@ import { FileDiff, parseDiffFromFile } from '@pierre/diffs';
 // Global state
 let currentDiffInstance = null;
 let currentTheme = 'pierre-dark';
+let currentThemeConfig = {
+  dark: 'pierre-dark',
+  light: 'pierre-light',
+};
 let currentDiffStyle = 'split';
 let currentOverflow = 'scroll';
 
@@ -252,7 +256,15 @@ window.pierreBridge = {
 
       // Update current settings
       if (options.theme) {
-        currentTheme = typeof options.theme === 'string' ? options.theme : options.theme.dark;
+        currentThemeConfig = typeof options.theme === 'string'
+          ? { dark: options.theme, light: options.theme }
+          : {
+              dark: options.theme.dark || 'pierre-dark',
+              light: options.theme.light || 'pierre-light',
+            };
+        currentTheme = options.themeType === 'light'
+          ? currentThemeConfig.light
+          : currentThemeConfig.dark;
       }
       if (options.diffStyle) {
         currentDiffStyle = options.diffStyle;
@@ -278,19 +290,20 @@ window.pierreBridge = {
         lang: newLang,
       };
 
-      // Create FileDiff instance
-      currentDiffInstance = new FileDiff({
-        theme: {
-          dark: 'pierre-dark',
-          light: 'pierre-light',
-        },
-        themeType: currentTheme.includes('light') ? 'light' : 'dark',
+      const fileDiffOptions = {
+        theme: currentThemeConfig,
+        themeType: options.themeType || (currentTheme.includes('light') ? 'light' : 'dark'),
         diffStyle: currentDiffStyle,
-        diffIndicators: 'bars',
-        hunkSeparators: 'line-info',
-        lineDiffType: 'word-alt',
+        diffIndicators: options.diffIndicators || 'bars',
+        hunkSeparators: options.hunkSeparators || 'line-info',
+        lineDiffType: options.lineDiffType || 'word-alt',
         overflow: currentOverflow,
         enableLineSelection: options.enableLineSelection ?? true,
+        disableLineNumbers: options.disableLineNumbers ?? false,
+        disableFileHeader: options.disableFileHeader ?? false,
+        disableBackground: options.disableBackground ?? false,
+        expandUnchanged: options.expandUnchanged ?? false,
+        stickyHeader: options.stickyHeader ?? false,
         renderAnnotation(annotation) {
           return createAnnotationDOM(annotation);
         },
@@ -307,7 +320,26 @@ window.pierreBridge = {
             });
           }
         },
-      });
+      };
+
+      if (options.collapsedContextThreshold != null) {
+        fileDiffOptions.collapsedContextThreshold = options.collapsedContextThreshold;
+      }
+      if (options.maxLineDiffLength != null) {
+        fileDiffOptions.maxLineDiffLength = options.maxLineDiffLength;
+      }
+      if (options.expansionLineCount != null) {
+        fileDiffOptions.expansionLineCount = options.expansionLineCount;
+      }
+      if (options.tokenizeMaxLength != null) {
+        fileDiffOptions.tokenizeMaxLength = options.tokenizeMaxLength;
+      }
+      if (options.tokenizeMaxLineLength != null) {
+        fileDiffOptions.tokenizeMaxLineLength = options.tokenizeMaxLineLength;
+      }
+
+      // Create FileDiff instance
+      currentDiffInstance = new FileDiff(fileDiffOptions);
 
       // Render the diff
       currentDiffInstance.render({
@@ -338,7 +370,7 @@ window.pierreBridge = {
       themeType = theme;
     }
 
-    currentTheme = themeType === 'dark' ? 'pierre-dark' : 'pierre-light';
+    currentTheme = themeType === 'dark' ? currentThemeConfig.dark : currentThemeConfig.light;
     currentDiffInstance.setThemeType(themeType);
   },
 

@@ -22,6 +22,7 @@ This is how we use it in [Claw](https://github.com/jamesrochabrun/Claw)
 - Inline word-level change highlighting
 - Dark/light theme support (auto-detects system preference)
 - Scroll or wrap overflow modes
+- Configurable diff indicators, hunk separators, inline diff granularity, file headers, line numbers, backgrounds, sticky headers, and large-file tokenization limits
 - Line click callbacks with position data for overlay positioning
 - Multi-line drag selection with range callbacks
 - Inline annotations (comments) rendered inside the diff
@@ -42,7 +43,7 @@ Add PierreDiffsSwift to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jamesrochabrun/PierreDiffsSwift.git", from: "1.0.0")
+    .package(url: "https://github.com/jamesrochabrun/PierreDiffsSwift.git", from: "1.2.0")
 ]
 ```
 
@@ -59,6 +60,11 @@ import PierreDiffsSwift
 struct ContentView: View {
     @State private var diffStyle: DiffStyle = .split
     @State private var overflowMode: OverflowMode = .scroll
+    private let renderOptions = PierreDiffRenderOptions(
+        diffIndicators: .bars,
+        hunkSeparators: .lineInfo,
+        lineDiffType: .wordAlt
+    )
 
     var body: some View {
         PierreDiffView(
@@ -66,7 +72,8 @@ struct ContentView: View {
             newContent: "let x = 1\nlet y = 3\nlet z = 4",
             fileName: "example.swift",
             diffStyle: $diffStyle,
-            overflowMode: $overflowMode
+            overflowMode: $overflowMode,
+            renderOptions: renderOptions
         )
         .frame(height: 400)
     }
@@ -88,6 +95,7 @@ PierreDiffView(
     fileName: String,
     diffStyle: Binding<DiffStyle>,
     overflowMode: Binding<OverflowMode>,
+    renderOptions: PierreDiffRenderOptions = .init(),
     annotations: [DiffAnnotation]? = nil,
     onLineClick: ((Int, String) -> Void)? = nil,
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
@@ -108,6 +116,7 @@ PierreDiffView(
 | `fileName` | `String` | Filename used for syntax highlighting detection |
 | `diffStyle` | `Binding<DiffStyle>` | `.split` or `.unified` |
 | `overflowMode` | `Binding<OverflowMode>` | `.scroll` or `.wrap` |
+| `renderOptions` | `PierreDiffRenderOptions` | Additional @pierre/diffs rendering controls |
 | `annotations` | `[DiffAnnotation]?` | Inline annotations rendered below diff lines |
 | `onLineClick` | `((Int, String) -> Void)?` | Simple line click (lineNumber, side) |
 | `onLineClickWithPosition` | `((LineClickPosition, CGPoint) -> Void)?` | Line click with position for overlay placement |
@@ -179,6 +188,60 @@ enum OverflowMode: String, CaseIterable {
     case scroll  // Horizontal scrolling for long lines
     case wrap    // Word wrap long lines
 }
+```
+
+#### `PierreDiffRenderOptions`
+
+Additional @pierre/diffs render controls. Defaults preserve PierreDiffsSwift's historical rendering.
+
+```swift
+let options = PierreDiffRenderOptions(
+    theme: .pierreSoft,
+    diffIndicators: .bars,
+    hunkSeparators: .lineInfo,
+    lineDiffType: .wordAlt,
+    disableLineNumbers: false,
+    disableFileHeader: false,
+    disableBackground: false,
+    expandUnchanged: false,
+    collapsedContextThreshold: nil,
+    maxLineDiffLength: nil,
+    expansionLineCount: nil,
+    tokenizeMaxLength: nil,
+    tokenizeMaxLineLength: nil,
+    stickyHeader: false
+)
+```
+
+Supported option enums:
+
+```swift
+enum DiffIndicatorStyle: String {
+    case classic
+    case bars
+    case none
+}
+
+enum LineDiffType: String {
+    case wordAlt = "word-alt"
+    case word
+    case char
+    case none
+}
+
+enum HunkSeparatorStyle: String {
+    case simple
+    case metadata
+    case lineInfo = "line-info"
+    case lineInfoBasic = "line-info-basic"
+}
+```
+
+Themes:
+
+```swift
+PierreDiffTheme.pierre      // pierre-dark / pierre-light
+PierreDiffTheme.pierreSoft  // pierre-dark-soft / pierre-light-soft
 ```
 
 #### `DiffAnnotation`
@@ -498,6 +561,8 @@ npm run build
 ```
 
 This generates `pierre-diffs-bundle.js` which should be copied to `Sources/PierreDiffsSwift/Resources/`.
+
+Before exposing additional upstream APIs, read [docs/upstream-pierre-diffs.md](docs/upstream-pierre-diffs.md), verify the pinned version in [scripts/package.json](scripts/package.json), and update [CHANGELOG.md](CHANGELOG.md).
 
 ## Supported Languages
 

@@ -52,6 +52,7 @@ public final class DiffWebViewCoordinator: NSObject {
   var lastDiffStyle: DiffStyle?
   var lastOverflowMode: OverflowMode?
   var lastTheme: String?
+  var lastRenderOptions: PierreDiffRenderOptions?
   var lastAnnotations: [DiffAnnotation]?
 
   // MARK: - Initialization
@@ -99,6 +100,7 @@ public final class DiffWebViewCoordinator: NSObject {
     theme: String,
     diffStyle: DiffStyle,
     overflowMode: OverflowMode = .scroll,
+    renderOptions: PierreDiffRenderOptions = PierreDiffRenderOptions(),
     annotations: [DiffAnnotation]? = nil
   ) {
     let input = PierreDiffInput(
@@ -113,13 +115,12 @@ public final class DiffWebViewCoordinator: NSObject {
         lang: nil
       ),
       options: PierreDiffInput.Options(
-        theme: PierreDiffInput.ThemeConfig(
-          dark: "pierre-dark",
-          light: "pierre-light"
-        ),
+        theme: PierreDiffInput.ThemeConfig(renderOptions.theme),
+        themeType: theme,
         diffStyle: diffStyle.rawValue,
         overflow: overflowMode.rawValue,
-        enableLineSelection: true
+        enableLineSelection: true,
+        renderOptions: renderOptions
       ),
       lineAnnotations: annotations
     )

@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 
 const outfile = '../Sources/PierreDiffsSwift/Resources/pierre-diffs-bundle.js';
@@ -35,6 +35,8 @@ if (isWatch) {
   console.log('Watching for changes...');
 } else {
   const result = await esbuild.build(buildOptions);
+  const bundle = readFileSync(outfile, 'utf8').replace(/[ \t]+$/gm, '');
+  writeFileSync(outfile, bundle);
   console.log('Bundle created successfully!');
   console.log(`Output: ${outfile}`);
   if (result.metafile) {
