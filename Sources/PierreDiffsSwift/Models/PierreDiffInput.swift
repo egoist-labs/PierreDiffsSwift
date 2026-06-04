@@ -35,6 +35,9 @@ public struct PierreDiffInput: Codable, Sendable {
     /// Theme configuration for dark/light modes
     public let theme: ThemeConfig
 
+    /// Current theme type: "dark" or "light"
+    public let themeType: String?
+
     /// Diff view style: "split" or "unified"
     public let diffStyle: String
 
@@ -44,11 +47,71 @@ public struct PierreDiffInput: Codable, Sendable {
     /// Enable click-to-select on line numbers
     public let enableLineSelection: Bool
 
-    public init(theme: ThemeConfig, diffStyle: String, overflow: String, enableLineSelection: Bool) {
+    /// How changed lines are marked: "classic", "bars", or "none"
+    public let diffIndicators: String
+
+    /// Hunk separator style
+    public let hunkSeparators: String
+
+    /// Inline line diff style
+    public let lineDiffType: String
+
+    /// Hide line numbers
+    public let disableLineNumbers: Bool
+
+    /// Hide the file header
+    public let disableFileHeader: Bool
+
+    /// Disable changed-line background fills
+    public let disableBackground: Bool
+
+    /// Expand unchanged hunks
+    public let expandUnchanged: Bool
+
+    /// Collapse context threshold
+    public let collapsedContextThreshold: Int?
+
+    /// Maximum line length for inline diffing
+    public let maxLineDiffLength: Int?
+
+    /// Number of lines to expand when expanding a hunk
+    public let expansionLineCount: Int?
+
+    /// Maximum total tokenization length before falling back to plain text
+    public let tokenizeMaxLength: Int?
+
+    /// Maximum per-line tokenization length before falling back to plain text
+    public let tokenizeMaxLineLength: Int?
+
+    /// Stick file headers while scrolling
+    public let stickyHeader: Bool
+
+    public init(
+      theme: ThemeConfig,
+      themeType: String? = nil,
+      diffStyle: String,
+      overflow: String,
+      enableLineSelection: Bool,
+      renderOptions: PierreDiffRenderOptions = PierreDiffRenderOptions()
+    ) {
       self.theme = theme
+      self.themeType = themeType
       self.diffStyle = diffStyle
       self.overflow = overflow
       self.enableLineSelection = enableLineSelection
+      self.diffIndicators = renderOptions.diffIndicators.rawValue
+      self.hunkSeparators = renderOptions.hunkSeparators.rawValue
+      self.lineDiffType = renderOptions.lineDiffType.rawValue
+      self.disableLineNumbers = renderOptions.disableLineNumbers
+      self.disableFileHeader = renderOptions.disableFileHeader
+      self.disableBackground = renderOptions.disableBackground
+      self.expandUnchanged = renderOptions.expandUnchanged
+      self.collapsedContextThreshold = renderOptions.collapsedContextThreshold
+      self.maxLineDiffLength = renderOptions.maxLineDiffLength
+      self.expansionLineCount = renderOptions.expansionLineCount
+      self.tokenizeMaxLength = renderOptions.tokenizeMaxLength
+      self.tokenizeMaxLineLength = renderOptions.tokenizeMaxLineLength
+      self.stickyHeader = renderOptions.stickyHeader
     }
   }
 
@@ -63,6 +126,11 @@ public struct PierreDiffInput: Codable, Sendable {
     public init(dark: String, light: String) {
       self.dark = dark
       self.light = light
+    }
+
+    public init(_ theme: PierreDiffTheme) {
+      self.dark = theme.dark
+      self.light = theme.light
     }
   }
 
@@ -100,7 +168,8 @@ extension PierreDiffInput {
   public static func from(
     diffResult: DiffResult,
     diffStyle: DiffStyle = .split,
-    overflowMode: OverflowMode = .scroll
+    overflowMode: OverflowMode = .scroll,
+    renderOptions: PierreDiffRenderOptions = PierreDiffRenderOptions()
   ) -> PierreDiffInput {
     PierreDiffInput(
       oldFile: FileContents(
@@ -114,13 +183,11 @@ extension PierreDiffInput {
         lang: nil
       ),
       options: Options(
-        theme: ThemeConfig(
-          dark: "pierre-dark",
-          light: "pierre-light"
-        ),
+        theme: ThemeConfig(renderOptions.theme),
         diffStyle: diffStyle.rawValue,
         overflow: overflowMode.rawValue,
-        enableLineSelection: true
+        enableLineSelection: true,
+        renderOptions: renderOptions
       )
     )
   }

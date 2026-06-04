@@ -35,6 +35,9 @@ public struct PierreDiffView: NSViewRepresentable {
   /// The current overflow mode (scroll or wrap)
   @Binding var overflowMode: OverflowMode
 
+  /// Additional renderer options passed through to @pierre/diffs
+  var renderOptions: PierreDiffRenderOptions
+
   /// Callback when the user clicks on a line
   var onLineClick: ((Int, String) -> Void)?
 
@@ -71,6 +74,7 @@ public struct PierreDiffView: NSViewRepresentable {
     fileName: String,
     diffStyle: Binding<DiffStyle>,
     overflowMode: Binding<OverflowMode>,
+    renderOptions: PierreDiffRenderOptions = PierreDiffRenderOptions(),
     annotations: [DiffAnnotation]? = nil,
     onLineClick: ((Int, String) -> Void)? = nil,
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,
@@ -85,6 +89,7 @@ public struct PierreDiffView: NSViewRepresentable {
     self.fileName = fileName
     self._diffStyle = diffStyle
     self._overflowMode = overflowMode
+    self.renderOptions = renderOptions
     self.annotations = annotations
     self.onLineClick = onLineClick
     self.onLineClickWithPosition = onLineClickWithPosition
@@ -143,14 +148,21 @@ public struct PierreDiffView: NSViewRepresentable {
     let currentTheme = themeForColorScheme
     let themeChanged = coordinator.lastTheme != currentTheme
 
+    // Check if render options have changed
+    let renderOptionsChanged = coordinator.lastRenderOptions != renderOptions
+
     // Check if annotations have changed
     let annotationsChanged = coordinator.lastAnnotations != annotations
+    let requiresFullRender = contentChanged || renderOptionsChanged
 
-    if contentChanged {
+    if requiresFullRender {
       coordinator.lastOldContent = oldContent
       coordinator.lastNewContent = newContent
       coordinator.lastFileName = fileName
+      coordinator.lastDiffStyle = diffStyle
       coordinator.lastOverflowMode = overflowMode
+      coordinator.lastTheme = currentTheme
+      coordinator.lastRenderOptions = renderOptions
       coordinator.lastAnnotations = annotations
       coordinator.renderDiff(
         oldContent: oldContent,
@@ -159,6 +171,7 @@ public struct PierreDiffView: NSViewRepresentable {
         theme: currentTheme,
         diffStyle: diffStyle,
         overflowMode: overflowMode,
+        renderOptions: renderOptions,
         annotations: annotations
       )
     } else if styleChanged {
@@ -172,7 +185,7 @@ public struct PierreDiffView: NSViewRepresentable {
       coordinator.setTheme(currentTheme)
     }
 
-    if !contentChanged && annotationsChanged {
+    if !requiresFullRender && annotationsChanged {
       coordinator.lastAnnotations = annotations
       if let annotations, !annotations.isEmpty {
         coordinator.setAnnotations(annotations)

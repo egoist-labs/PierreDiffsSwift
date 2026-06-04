@@ -9,6 +9,17 @@ This guide explains how to integrate PierreDiffsSwift's full feature set into a 
 .package(url: "https://github.com/jamesrochabrun/PierreDiffsSwift", from: "1.2.0")
 ```
 
+## Upstream Docs Before Integration
+
+Before adding or changing APIs that mirror `@pierre/diffs`, read:
+
+- `CHANGELOG.md`
+- `docs/upstream-pierre-diffs.md`
+- `scripts/package.json` for the pinned `@pierre/diffs` version
+- local declarations in `scripts/node_modules/@pierre/diffs/dist/` after `cd scripts && npm install`
+
+Cross-check with https://diffs.com/docs and https://github.com/pierrecomputer/pierre/releases, but do not assume upstream `latest` docs match the pinned bundled version.
+
 ## Core View: PierreDiffView
 
 ```swift
@@ -18,6 +29,7 @@ PierreDiffView(
     fileName: String,                                            // For syntax highlighting
     diffStyle: Binding<DiffStyle>,                               // .split or .unified
     overflowMode: Binding<OverflowMode>,                         // .scroll or .wrap
+    renderOptions: PierreDiffRenderOptions = .init(),             // Optional renderer controls
     annotations: [DiffAnnotation]? = nil,                        // Inline comments
     onLineClick: ((Int, String) -> Void)? = nil,                 // (lineNumber, side)
     onLineClickWithPosition: ((LineClickPosition, CGPoint) -> Void)? = nil,  // With screen position
@@ -30,6 +42,31 @@ PierreDiffView(
 ```
 
 All callbacks are optional. The view works with just content + fileName + bindings.
+
+## Render Options
+
+`PierreDiffRenderOptions` exposes low-risk `FileDiff` controls while preserving defaults:
+
+```swift
+PierreDiffRenderOptions(
+    theme: .pierre,                   // or .pierreSoft
+    diffIndicators: .bars,            // .classic, .bars, .none
+    hunkSeparators: .lineInfo,        // .simple, .metadata, .lineInfo, .lineInfoBasic
+    lineDiffType: .wordAlt,           // .wordAlt, .word, .char, .none
+    disableLineNumbers: false,
+    disableFileHeader: false,
+    disableBackground: false,
+    expandUnchanged: false,
+    collapsedContextThreshold: nil,
+    maxLineDiffLength: nil,
+    expansionLineCount: nil,
+    tokenizeMaxLength: nil,
+    tokenizeMaxLineLength: nil,
+    stickyHeader: false
+)
+```
+
+Option changes trigger a full `FileDiff` re-render. Annotation-only changes still use dynamic `setLineAnnotations()`.
 
 ## Feature 1: Line Click with Position
 

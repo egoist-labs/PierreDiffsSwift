@@ -8,7 +8,7 @@
     "watch": "node bundle.js --watch"
   },
   "dependencies": {
-    "@pierre/diffs": "1.1.12"
+    "@pierre/diffs": "1.2.7"
   },
   "devDependencies": {
     "esbuild": "^0.24.0"
