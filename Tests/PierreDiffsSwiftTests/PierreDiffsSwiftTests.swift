@@ -80,3 +80,18 @@ import Testing
   #expect(options["tokenizeMaxLineLength"] as? Int == 2_000)
   #expect(options["stickyHeader"] as? Bool == true)
 }
+
+@Test func annotationBridgePreservesScrollWithoutForcedRerender() throws {
+  let html = DiffHTMLTemplate.generateHTML()
+  let setAnnotationsRange = try #require(html.range(of: "setAnnotations"))
+  let removeAnnotationsRange = try #require(
+    html[setAnnotationsRange.upperBound...].range(of: "removeAnnotations")
+  )
+  let setAnnotationsBlock = html[setAnnotationsRange.lowerBound..<removeAnnotationsRange.lowerBound]
+
+  #expect(html.contains("scrollTop"))
+  #expect(html.contains("scrollLeft"))
+  #expect(setAnnotationsBlock.contains("preventEmit"))
+  #expect(setAnnotationsBlock.contains(".render(") || setAnnotationsBlock.contains(".render({"))
+  #expect(!setAnnotationsBlock.contains(".rerender()"))
+}
