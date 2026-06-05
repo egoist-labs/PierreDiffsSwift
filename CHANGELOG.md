@@ -30,3 +30,7 @@ All notable changes to PierreDiffsSwift are documented here.
 - Bumped the bundled `@pierre/diffs` dependency from `1.1.12` to `1.2.7`.
 - Rebuilt `Sources/PierreDiffsSwift/Resources/pierre-diffs-bundle.js`.
 - Updated README and agent guidance for the new render options.
+
+### Fixed
+
+- Preserved the WebView scroll position when inline annotations are added, edited, or removed.

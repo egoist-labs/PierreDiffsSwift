@@ -16,6 +16,8 @@ let currentThemeConfig = {
 };
 let currentDiffStyle = 'split';
 let currentOverflow = 'scroll';
+let currentOldFile = null;
+let currentNewFile = null;
 
 /**
  * Sends a message to Swift via webkit message handler
@@ -42,6 +44,27 @@ function getContainer() {
     document.body.appendChild(container);
   }
   return container;
+}
+
+/**
+ * Runs a DOM update without letting WebKit snap the scroll container back to
+ * the top while rows are replaced or resized.
+ */
+function preservingScrollPosition(update) {
+  const container = getContainer();
+  const scrollTop = container.scrollTop;
+  const scrollLeft = container.scrollLeft;
+
+  const restore = () => {
+    container.scrollTop = scrollTop;
+    container.scrollLeft = scrollLeft;
+  };
+
+  const result = update(container);
+  restore();
+  requestAnimationFrame(restore);
+  setTimeout(restore, 0);
+  return result;
 }
 
 /**
@@ -289,6 +312,8 @@ window.pierreBridge = {
         contents: newFile.contents || '',
         lang: newLang,
       };
+      currentOldFile = oldFileObj;
+      currentNewFile = newFileObj;
 
       const fileDiffOptions = {
         theme: currentThemeConfig,
@@ -433,8 +458,15 @@ window.pierreBridge = {
       const annotations = typeof annotationsData === 'string'
         ? JSON.parse(annotationsData)
         : annotationsData;
-      currentDiffInstance.setLineAnnotations(annotations);
-      currentDiffInstance.rerender();
+      preservingScrollPosition((container) => {
+        currentDiffInstance.render({
+          oldFile: currentOldFile,
+          newFile: currentNewFile,
+          containerWrapper: container,
+          lineAnnotations: annotations,
+          preventEmit: true,
+        });
+      });
     } catch (error) {
       console.error('Error setting annotations:', error);
       postToSwift('error', { message: error.message });
@@ -446,8 +478,7 @@ window.pierreBridge = {
    */
   removeAnnotations() {
     if (!currentDiffInstance) return;
-    currentDiffInstance.setLineAnnotations([]);
-    currentDiffInstance.rerender();
+    this.setAnnotations([]);
   },
 
   /**
@@ -458,6 +489,8 @@ window.pierreBridge = {
       currentDiffInstance.cleanUp();
       currentDiffInstance = null;
     }
+    currentOldFile = null;
+    currentNewFile = null;
     const container = getContainer();
     container.innerHTML = '';
   },
