@@ -25,11 +25,24 @@ import Testing
   #expect(options.expansionLineCount == nil)
   #expect(options.tokenizeMaxLength == nil)
   #expect(options.tokenizeMaxLineLength == nil)
+  #expect(options.font == .default)
+  #expect(options.font.family == PierreDiffFont.defaultCodeFamily)
+  #expect(options.font.size == "12px")
+  #expect(options.font.lineHeight == "1.5")
+  #expect(options.font.headerFamily == PierreDiffFont.defaultHeaderFamily)
+  #expect(options.font.tabSize == 2)
 }
 
 @Test func renderOptionsEncodeForJavaScriptBridge() throws {
   let renderOptions = PierreDiffRenderOptions(
     theme: .pierreSoft,
+    font: PierreDiffFont(
+      family: "JetBrains Mono, Menlo, monospace",
+      sizePoints: 13,
+      lineHeight: 1.6,
+      headerFamily: "SF Pro Text, system-ui, sans-serif",
+      tabSize: 4
+    ),
     diffIndicators: .classic,
     hunkSeparators: .metadata,
     lineDiffType: .char,
@@ -61,6 +74,7 @@ import Testing
   let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
   let options = try #require(object["options"] as? [String: Any])
   let theme = try #require(options["theme"] as? [String: Any])
+  let font = try #require(options["font"] as? [String: Any])
 
   #expect(theme["dark"] as? String == "pierre-dark-soft")
   #expect(theme["light"] as? String == "pierre-light-soft")
@@ -79,6 +93,83 @@ import Testing
   #expect(options["tokenizeMaxLength"] as? Int == 120_000)
   #expect(options["tokenizeMaxLineLength"] as? Int == 2_000)
   #expect(options["stickyHeader"] as? Bool == true)
+  #expect(font["family"] as? String == "JetBrains Mono, Menlo, monospace")
+  #expect(font["size"] as? String == "13px")
+  #expect(font["lineHeight"] as? String == "1.6")
+  #expect(font["headerFamily"] as? String == "SF Pro Text, system-ui, sans-serif")
+  #expect(font["tabSize"] as? Int == 4)
+}
+
+@Test func fontPointsConvenienceFormatsCSSValues() {
+  let font = PierreDiffFont(family: "Menlo", sizePoints: 14.5, lineHeight: 1.25, tabSize: 0)
+  #expect(font.family == "Menlo")
+  #expect(font.size == "14.5px")
+  #expect(font.lineHeight == "1.25")
+  #expect(font.tabSize == 1)
+  #expect(font.faces.isEmpty)
+}
+
+@Test func bundledFontFaceEncodesBase64ForBridge() throws {
+  // Minimal valid-ish TTF-ish payload for encoding tests (not a real font).
+  let fontBytes = Data([0x00, 0x01, 0x00, 0x00, 0xFF, 0xAB, 0xCD])
+  let face = PierreDiffFontFace(
+    family: "JetBrains Mono",
+    data: fontBytes,
+    format: .truetype,
+    weight: "400",
+    style: "normal"
+  )
+  let font = PierreDiffFont.bundled(
+    familyName: "JetBrains Mono",
+    faces: [face],
+    sizePoints: 13,
+    tabSize: 4
+  )
+  let renderOptions = PierreDiffRenderOptions(font: font)
+  let input = PierreDiffInput.from(
+    diffResult: DiffResult(
+      filePath: "a.swift",
+      fileName: "a.swift",
+      original: "a\n",
+      updated: "b\n"
+    ),
+    renderOptions: renderOptions
+  )
+
+  let data = try JSONEncoder().encode(input)
+  let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+  let options = try #require(object["options"] as? [String: Any])
+  let encodedFont = try #require(options["font"] as? [String: Any])
+  let faces = try #require(encodedFont["faces"] as? [[String: Any]])
+  let encodedFace = try #require(faces.first)
+
+  #expect(encodedFont["family"] as? String == "'JetBrains Mono', \(PierreDiffFont.defaultCodeFamily)")
+  #expect(faces.count == 1)
+  #expect(encodedFace["family"] as? String == "JetBrains Mono")
+  #expect(encodedFace["data"] as? String == fontBytes.base64EncodedString())
+  #expect(encodedFace["format"] as? String == "truetype")
+  #expect(encodedFace["weight"] as? String == "400")
+  #expect(encodedFace["style"] as? String == "normal")
+}
+
+@Test func fontFormatInfersFromExtension() {
+  #expect(PierreDiffFontFormat.infer(fromPathExtension: "ttf") == .truetype)
+  #expect(PierreDiffFontFormat.infer(fromPathExtension: "OTF") == .opentype)
+  #expect(PierreDiffFontFormat.infer(fromPathExtension: "woff2") == .woff2)
+  #expect(PierreDiffFontFormat.infer(fromPathExtension: "txt") == nil)
+  #expect(PierreDiffFontFormat.truetype.mimeType == "font/ttf")
+  #expect(PierreDiffFontFormat.woff2.mimeType == "font/woff2")
+}
+
+@Test func missingBundledFontResourceThrows() {
+  #expect(throws: PierreDiffFontFaceError.self) {
+    _ = try PierreDiffFontFace(
+      family: "Missing",
+      resource: "DefinitelyNotARealFontResource_xyz",
+      extension: "ttf",
+      bundle: .module
+    )
+  }
 }
 
 @Test func annotationBridgePreservesScrollWithoutForcedRerender() throws {
@@ -94,4 +185,22 @@ import Testing
   #expect(setAnnotationsBlock.contains("preventEmit"))
   #expect(setAnnotationsBlock.contains(".render(") || setAnnotationsBlock.contains(".render({"))
   #expect(!setAnnotationsBlock.contains(".rerender()"))
+}
+
+@Test func fontBridgeAppliesCSSCustomProperties() throws {
+  let html = DiffHTMLTemplate.generateHTML()
+  // Minified bundles rename local functions; assert on stable bridge/CSS strings.
+  #expect(html.contains("setFont"))
+  #expect(html.contains("--diffs-font-family"))
+  #expect(html.contains("--diffs-font-size"))
+  #expect(html.contains("--diffs-line-height"))
+  #expect(html.contains("--diffs-header-font-family"))
+  #expect(html.contains("--diffs-tab-size"))
+  #expect(html.contains("ui-monospace"))
+  #expect(html.contains("pierreBridge"))
+  // Bundled @font-face injection markers (stable strings survive minify)
+  #expect(html.contains("pierre-font-faces"))
+  #expect(html.contains("@font-face"))
+  #expect(html.contains("font/ttf"))
+  #expect(html.contains("font-display:swap") || html.contains("font-display: swap"))
 }

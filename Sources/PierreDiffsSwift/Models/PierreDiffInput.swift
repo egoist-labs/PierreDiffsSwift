@@ -86,6 +86,9 @@ public struct PierreDiffInput: Codable, Sendable {
     /// Stick file headers while scrolling
     public let stickyHeader: Bool
 
+    /// Font configuration applied as CSS custom properties
+    public let font: PierreDiffFont
+
     public init(
       theme: ThemeConfig,
       themeType: String? = nil,
@@ -112,6 +115,7 @@ public struct PierreDiffInput: Codable, Sendable {
       self.tokenizeMaxLength = renderOptions.tokenizeMaxLength
       self.tokenizeMaxLineLength = renderOptions.tokenizeMaxLineLength
       self.stickyHeader = renderOptions.stickyHeader
+      self.font = renderOptions.font
     }
   }
 

@@ -68,6 +68,94 @@ function preservingScrollPosition(update) {
 }
 
 /**
+ * Default font stack matching PierreDiffsSwift historical CSS defaults.
+ */
+const DEFAULT_FONT = {
+  family: "ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Code', 'Roboto Mono', monospace",
+  size: '12px',
+  lineHeight: '1.5',
+  headerFamily: "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif",
+  tabSize: 2,
+  faces: [],
+};
+
+const FONT_FACE_STYLE_ID = 'pierre-font-faces';
+
+const FONT_FORMAT_MIME = {
+  truetype: 'font/ttf',
+  opentype: 'font/otf',
+  woff: 'font/woff',
+  woff2: 'font/woff2',
+};
+
+/**
+ * Escapes a string for use inside a single-quoted CSS value.
+ */
+function escapeCSSString(value) {
+  return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/**
+ * Injects (or clears) @font-face rules for bundled font bytes.
+ * Fonts are embedded as data URLs so they work with loadHTMLString(baseURL: nil).
+ */
+function applyFontFaces(faces) {
+  let styleEl = document.getElementById(FONT_FACE_STYLE_ID);
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = FONT_FACE_STYLE_ID;
+    document.head.appendChild(styleEl);
+  }
+
+  if (!Array.isArray(faces) || faces.length === 0) {
+    styleEl.textContent = '';
+    return;
+  }
+
+  const rules = [];
+  for (const face of faces) {
+    if (!face || !face.family || !face.data) continue;
+    const format = face.format || 'truetype';
+    const mime = FONT_FORMAT_MIME[format] || 'font/ttf';
+    const family = escapeCSSString(face.family);
+    const weight = face.weight || 'normal';
+    const fontStyle = face.style || 'normal';
+    // data is base64 from Swift; keep as-is (no CSS escaping needed for base64 alphabet)
+    rules.push(
+      `@font-face{font-family:'${family}';src:url(data:${mime};base64,${face.data}) format('${format}');font-weight:${weight};font-style:${fontStyle};font-display:swap;}`
+    );
+  }
+  styleEl.textContent = rules.join('\n');
+}
+
+/**
+ * Applies font CSS custom properties that @pierre/diffs reads via
+ * --diffs-font-family / --diffs-font-size / etc. (inherits into Shadow DOM).
+ * Also injects bundled @font-face rules when `faces` are provided.
+ */
+function applyFontOptions(fontOptions) {
+  const font = {
+    ...DEFAULT_FONT,
+    ...(fontOptions || {}),
+  };
+
+  applyFontFaces(font.faces);
+
+  const root = document.documentElement;
+  root.style.setProperty('--diffs-font-family', font.family);
+  root.style.setProperty('--diffs-font-size', font.size);
+  root.style.setProperty('--diffs-line-height', font.lineHeight);
+  root.style.setProperty('--diffs-header-font-family', font.headerFamily);
+  root.style.setProperty('--diffs-tab-size', String(font.tabSize));
+
+  // Keep light-DOM body styles in sync with the shadow-DOM host vars.
+  document.body.style.fontFamily = font.family;
+  document.body.style.fontSize = font.size;
+  document.body.style.lineHeight = font.lineHeight;
+  document.body.style.tabSize = String(font.tabSize);
+}
+
+/**
  * Detects the language from a filename
  */
 function detectLanguage(fileName) {
@@ -296,6 +384,8 @@ window.pierreBridge = {
         currentOverflow = options.overflow;
       }
 
+      applyFontOptions(options.font);
+
       // Detect languages if not specified
       const oldLang = oldFile.lang || detectLanguage(oldFile.name);
       const newLang = newFile.lang || detectLanguage(newFile.name);
@@ -427,6 +517,20 @@ window.pierreBridge = {
       overflow: mode,
     });
     currentDiffInstance.rerender();
+  },
+
+  /**
+   * Updates font CSS variables without a full FileDiff re-render.
+   * @param {object|string} fontData - Font options (object or JSON string)
+   */
+  setFont(fontData) {
+    try {
+      const font = typeof fontData === 'string' ? JSON.parse(fontData) : fontData;
+      applyFontOptions(font);
+    } catch (error) {
+      console.error('Error setting font:', error);
+      postToSwift('error', { message: error.message });
+    }
   },
 
   /**

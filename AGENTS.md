@@ -6,7 +6,7 @@ This guide explains how to integrate PierreDiffsSwift's full feature set into a 
 
 ```swift
 // Package.swift
-.package(url: "https://github.com/jamesrochabrun/PierreDiffsSwift", from: "1.2.0")
+.package(url: "https://github.com/egoist-labs/PierreDiffsSwift", from: "1.3.0")
 ```
 
 ## Upstream Docs Before Integration
@@ -50,6 +50,7 @@ All callbacks are optional. The view works with just content + fileName + bindin
 ```swift
 PierreDiffRenderOptions(
     theme: .pierre,                   // or .pierreSoft
+    font: .default,                   // or PierreDiffFont(family:sizePoints:)
     diffIndicators: .bars,            // .classic, .bars, .none
     hunkSeparators: .lineInfo,        // .simple, .metadata, .lineInfo, .lineInfoBasic
     lineDiffType: .wordAlt,           // .wordAlt, .word, .char, .none
@@ -66,7 +67,22 @@ PierreDiffRenderOptions(
 )
 ```
 
-Option changes trigger a full `FileDiff` re-render. Annotation-only changes still use dynamic `setLineAnnotations()`.
+Most option changes trigger a full `FileDiff` re-render. Font-only changes update CSS variables (`--diffs-font-family`, etc.) and re-inject `@font-face` rules without re-rendering. Annotation-only changes still use dynamic annotation updates.
+
+### Bundled fonts
+
+System fonts work via `PierreDiffFont(family:)`. App-bundled fonts need `PierreDiffFontFace` (base64 data URL `@font-face` injection):
+
+```swift
+let face = try PierreDiffFontFace(
+    family: "JetBrains Mono",
+    resource: "JetBrainsMono-Regular",
+    extension: "ttf"
+)
+let options = PierreDiffRenderOptions(
+    font: .bundled(familyName: "JetBrains Mono", faces: [face], sizePoints: 13)
+)
+```
 
 ## Feature 1: Line Click with Position
 

@@ -5,9 +5,10 @@ PierreDiffsSwift wraps a pinned bundled build of `@pierre/diffs`.
 ## Current Pin
 
 - npm package: `@pierre/diffs`
-- pinned version: `1.2.7`
+- pinned version: `1.2.12`
 - configured in: `scripts/package.json`
 - bundled output: `Sources/PierreDiffsSwift/Resources/pierre-diffs-bundle.js`
+- build pins: `shiki@4.3.1` and `@shikijs/themes@4.3.1` (required so esbuild can resolve theme imports from `@pierre/theming`)
 
 ## Before Integrating Upstream APIs
 

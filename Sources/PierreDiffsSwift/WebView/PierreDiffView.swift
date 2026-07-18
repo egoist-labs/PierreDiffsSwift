@@ -148,12 +148,20 @@ public struct PierreDiffView: NSViewRepresentable {
     let currentTheme = themeForColorScheme
     let themeChanged = coordinator.lastTheme != currentTheme
 
-    // Check if render options have changed
-    let renderOptionsChanged = coordinator.lastRenderOptions != renderOptions
+    // Check if render options have changed (font can update without a full re-render)
+    let previousRenderOptions = coordinator.lastRenderOptions
+    let renderOptionsChanged = previousRenderOptions != renderOptions
+    let nonFontRenderOptionsChanged: Bool = {
+      guard let previousRenderOptions else { return renderOptionsChanged }
+      var normalizedPrevious = previousRenderOptions
+      normalizedPrevious.font = renderOptions.font
+      return normalizedPrevious != renderOptions
+    }()
+    let fontOnlyChanged = renderOptionsChanged && !nonFontRenderOptionsChanged
 
     // Check if annotations have changed
     let annotationsChanged = coordinator.lastAnnotations != annotations
-    let requiresFullRender = contentChanged || renderOptionsChanged
+    let requiresFullRender = contentChanged || nonFontRenderOptionsChanged
 
     if requiresFullRender {
       coordinator.lastOldContent = oldContent
@@ -183,6 +191,11 @@ public struct PierreDiffView: NSViewRepresentable {
     } else if themeChanged {
       coordinator.lastTheme = currentTheme
       coordinator.setTheme(currentTheme)
+    }
+
+    if !requiresFullRender && fontOnlyChanged {
+      coordinator.lastRenderOptions = renderOptions
+      coordinator.setFont(renderOptions.font)
     }
 
     if !requiresFullRender && annotationsChanged {

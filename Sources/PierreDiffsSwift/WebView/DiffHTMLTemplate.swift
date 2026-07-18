@@ -80,6 +80,10 @@ enum DiffHTMLTemplate {
     },
     setTheme: function() {},
     setDiffStyle: function() {},
+    setOverflow: function() {},
+    setFont: function() {},
+    setAnnotations: function() {},
+    removeAnnotations: function() {},
     scrollToLine: function() {},
     getSelection: function() { return ''; },
     cleanup: function() {}

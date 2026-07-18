@@ -154,6 +154,13 @@ public final class DiffWebViewCoordinator: NSObject {
     }
   }
 
+  /// Updates font CSS variables without a full FileDiff re-render
+  func setFont(_ font: PierreDiffFont) {
+    executeWhenReady { [weak self] in
+      self?.callJavaScript("setFont", with: font)
+    }
+  }
+
   /// Sets line annotations dynamically
   func setAnnotations(_ annotations: [DiffAnnotation]) {
     executeWhenReady { [weak self] in

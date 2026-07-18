@@ -2,7 +2,7 @@
 
 ## What This Project Is
 
-A Swift package that wraps the `@pierre/diffs` JavaScript library (v1.2.7) to render syntax-highlighted code diffs in macOS apps via WKWebView. It provides SwiftUI views, line interaction callbacks, and an inline annotation system.
+A Swift package that wraps the `@pierre/diffs` JavaScript library (v1.2.12) to render syntax-highlighted code diffs in macOS apps via WKWebView. It provides SwiftUI views, line interaction callbacks, and an inline annotation system.
 
 ## Architecture
 
@@ -32,7 +32,7 @@ PierreDiffView (SwiftUI NSViewRepresentable)
 | `Sources/.../Models/LineSelectionRange.swift` | Range data for multi-line selection callbacks |
 | `scripts/src/diff-entry.js` | JS entry point — bridge API, annotation DOM, events |
 | `scripts/bundle.js` | esbuild config |
-| `scripts/package.json` | npm deps (`@pierre/diffs` pinned to 1.2.7) |
+| `scripts/package.json` | npm deps (`@pierre/diffs` pinned to 1.2.12) |
 | `CHANGELOG.md` | Wrapper release notes |
 | `docs/upstream-pierre-diffs.md` | Upstream docs/version checklist for agents |
 
@@ -52,7 +52,7 @@ PierreDiffView (SwiftUI NSViewRepresentable)
 
 Before exposing more `@pierre/diffs` APIs, read `docs/upstream-pierre-diffs.md`, then verify the pinned package's local declarations under `scripts/node_modules/@pierre/diffs/dist/`. Cross-check upstream docs and releases, but keep wrapper behavior aligned to the pinned version in `scripts/package.json`.
 
-Current low-risk pass-through options live in `PierreDiffRenderOptions`: theme pair, diff indicators, hunk separator style, line diff type, line/header/background visibility, unchanged-hunk expansion, large-line diff limits, tokenization limits, and sticky headers. Keep defaults backward-compatible.
+Current low-risk pass-through options live in `PierreDiffRenderOptions`: theme pair, font (`PierreDiffFont` CSS variables + optional bundled `PierreDiffFontFace` `@font-face` data URLs), diff indicators, hunk separator style, line diff type, line/header/background visibility, unchanged-hunk expansion, large-line diff limits, tokenization limits, and sticky headers. Keep defaults backward-compatible.
 
 ## Build Commands
 

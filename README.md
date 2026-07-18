@@ -22,7 +22,7 @@ This is how we use it in [Claw](https://github.com/jamesrochabrun/Claw)
 - Inline word-level change highlighting
 - Dark/light theme support (auto-detects system preference)
 - Scroll or wrap overflow modes
-- Configurable diff indicators, hunk separators, inline diff granularity, file headers, line numbers, backgrounds, sticky headers, and large-file tokenization limits
+- Configurable fonts, diff indicators, hunk separators, inline diff granularity, file headers, line numbers, backgrounds, sticky headers, and large-file tokenization limits
 - Line click callbacks with position data for overlay positioning
 - Multi-line drag selection with range callbacks
 - Inline annotations (comments) rendered inside the diff
@@ -43,7 +43,7 @@ Add PierreDiffsSwift to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jamesrochabrun/PierreDiffsSwift.git", from: "1.2.0")
+    .package(url: "https://github.com/egoist-labs/PierreDiffsSwift.git", from: "1.3.0")
 ]
 ```
 
@@ -197,6 +197,12 @@ Additional @pierre/diffs render controls. Defaults preserve PierreDiffsSwift's h
 ```swift
 let options = PierreDiffRenderOptions(
     theme: .pierreSoft,
+    font: PierreDiffFont(
+        family: "JetBrains Mono, Menlo, monospace",
+        sizePoints: 13,
+        lineHeight: 1.5,
+        tabSize: 4
+    ),
     diffIndicators: .bars,
     hunkSeparators: .lineInfo,
     lineDiffType: .wordAlt,
@@ -212,6 +218,66 @@ let options = PierreDiffRenderOptions(
     stickyHeader: false
 )
 ```
+
+#### `PierreDiffFont`
+
+Customize the monospace code font, header font, size, line height, and tab size. Values map to `@pierre/diffs` CSS variables (`--diffs-font-family`, `--diffs-font-size`, etc.).
+
+```swift
+// Defaults match historical PierreDiffsSwift styling (12px mono)
+PierreDiffFont.default
+
+// Point-size convenience (converted to CSS px) — system fonts
+PierreDiffFont(family: "Menlo", sizePoints: 13, lineHeight: 1.5, tabSize: 2)
+
+// Full CSS control
+PierreDiffFont(
+    family: "ui-monospace, SF Mono, Menlo, monospace",
+    size: "13px",
+    lineHeight: "20px",
+    headerFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+    tabSize: 4
+)
+```
+
+##### Bundled fonts (`.ttf` / `.otf` / `.woff` / `.woff2`)
+
+WKWebView cannot see app-bundle fonts by family name alone. Load faces with
+`PierreDiffFontFace` so the bridge injects `@font-face` data URLs:
+
+```swift
+// Add JetBrainsMono-Regular.ttf to your app target, then:
+let face = try PierreDiffFontFace(
+    family: "JetBrains Mono",
+    resource: "JetBrainsMono-Regular",
+    extension: "ttf"
+)
+
+// family stack must include the face's family name
+let font = PierreDiffFont(
+    family: "'JetBrains Mono', ui-monospace, monospace",
+    sizePoints: 13,
+    faces: [face]
+)
+
+// Or use the helper that builds a fallback stack for you:
+let font = PierreDiffFont.bundled(
+    familyName: "JetBrains Mono",
+    faces: [face],
+    sizePoints: 13
+)
+
+// Multiple weights
+let regular = try PierreDiffFontFace(family: "JetBrains Mono", resource: "JetBrainsMono-Regular", extension: "ttf", weight: "400")
+let bold = try PierreDiffFontFace(family: "JetBrains Mono", resource: "JetBrainsMono-Bold", extension: "ttf", weight: "700")
+
+// Failable convenience (handy in SwiftUI)
+if let face = PierreDiffFontFace.load(family: "JetBrains Mono", resource: "JetBrainsMono-Regular", extension: "ttf") {
+    let options = PierreDiffRenderOptions(font: .bundled(familyName: "JetBrains Mono", faces: [face]))
+}
+```
+
+Supported formats: `truetype` (`.ttf`), `opentype` (`.otf`), `woff`, `woff2`.
 
 Supported option enums:
 

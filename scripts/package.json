@@ -8,7 +8,9 @@
     "watch": "node bundle.js --watch"
   },
   "dependencies": {
-    "@pierre/diffs": "1.2.7"
+    "@pierre/diffs": "1.2.12",
+    "@shikijs/themes": "4.3.1",
+    "shiki": "4.3.1"
   },
   "devDependencies": {
     "esbuild": "^0.24.0"
