@@ -1,11 +1,6 @@
 # PierreDiffsSwift
 
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-048754?logo=buymeacoffee&style=for-the-badge)](https://buymeacoffee.com/jamesrochabrun)
-
-
 A Swift package for rendering beautiful, syntax-highlighted code diffs in macOS applications using the [@pierre/diffs](https://www.npmjs.com/package/@pierre/diffs) JavaScript library.
-
-This is how we use it in [Claw](https://github.com/jamesrochabrun/Claw)
 
 ## Dark Mode
 <img width="859" height="990" alt="Image" src="https://github.com/user-attachments/assets/4eb8df72-308b-4f99-9bc9-acdb347a11e6" />
