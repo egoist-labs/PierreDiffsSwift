@@ -2,6 +2,12 @@
 
 All notable changes to PierreDiffsSwift are documented here.
 
+## 1.3.1 - 2026-07-24
+
+### Fixed
+
+- Fixed non-ASCII content (CJK, emoji, accented characters) rendering as mojibake — e.g. `内容` shown as `å†…å®¹` (egoist/kero#16). The injected bridge script decoded base64 with `atob()` alone, which produces a Latin-1 binary string, so multi-byte UTF-8 sequences were split into separate characters before `JSON.parse`. The bytes are now re-decoded with `TextDecoder('utf-8')` first. All bridge calls (`renderDiff`, `setFont`, `setAnnotations`) route through this path, so one fix covers them all.
+
 ## 1.3.0 - 2026-07-18
 
 ### Added

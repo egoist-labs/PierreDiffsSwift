@@ -38,7 +38,7 @@ Add PierreDiffsSwift to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/egoist-labs/PierreDiffsSwift.git", from: "1.3.0")
+    .package(url: "https://github.com/egoist-labs/PierreDiffsSwift.git", from: "1.3.1")
 ]
 ```
 

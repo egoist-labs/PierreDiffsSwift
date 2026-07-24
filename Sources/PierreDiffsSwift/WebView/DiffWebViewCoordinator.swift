@@ -222,25 +222,34 @@ public final class DiffWebViewCoordinator: NSObject {
       // Use base64 encoding to safely transfer data with special characters
       let base64String = jsonData.base64EncodedString()
 
-      // JavaScript will decode base64 and parse JSON
-      let script = """
-      (function() {
-        try {
-          const decoded = atob('\(base64String)');
-          const input = JSON.parse(decoded);
-          window.pierreBridge.\(method)(input);
-        } catch (e) {
-          console.error('Failed to decode/parse input:', e);
-          if (window.webkit?.messageHandlers?.diffBridge) {
-            window.webkit.messageHandlers.diffBridge.postMessage({ type: 'error', message: e.message });
-          }
-        }
-      })();
-      """
-      evaluateJavaScript(script)
+      evaluateJavaScript(Self.bridgeScript(method: method, base64String: base64String))
     } catch {
       DiffLogger.error("DiffWebViewCoordinator: Failed to encode input: \(error)")
     }
+  }
+
+  /// Builds the script that decodes base64-encoded UTF-8 JSON and calls a `pierreBridge` method.
+  ///
+  /// `atob` alone yields a binary string with one Latin-1 char per byte, which splits
+  /// multi-byte UTF-8 sequences (CJK, emoji, accents) into separate characters — the
+  /// bytes must be re-decoded as UTF-8 before `JSON.parse`.
+  nonisolated static func bridgeScript(method: String, base64String: String) -> String {
+    """
+    (function() {
+      try {
+        const binary = atob('\(base64String)');
+        const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+        const decoded = new TextDecoder('utf-8').decode(bytes);
+        const input = JSON.parse(decoded);
+        window.pierreBridge.\(method)(input);
+      } catch (e) {
+        console.error('Failed to decode/parse input:', e);
+        if (window.webkit?.messageHandlers?.diffBridge) {
+          window.webkit.messageHandlers.diffBridge.postMessage({ type: 'error', message: e.message });
+        }
+      }
+    })();
+    """
   }
 
   private func evaluateJavaScript(_ script: String) {

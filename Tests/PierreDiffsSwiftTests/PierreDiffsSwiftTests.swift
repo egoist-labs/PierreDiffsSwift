@@ -172,6 +172,25 @@ import Testing
   }
 }
 
+@Test func bridgeScriptDecodesBase64BytesAsUTF8() throws {
+  // Regression test for egoist/kero#16: atob() alone yields a Latin-1 binary
+  // string, so multi-byte UTF-8 (CJK, emoji, accents) turned into mojibake.
+  // The script must re-decode the atob bytes as UTF-8 before JSON.parse.
+  let payload = ["contents": "测试中文 diff 内容 🚀 café"]
+  let base64 = try JSONEncoder().encode(payload).base64EncodedString()
+  let script = DiffWebViewCoordinator.bridgeScript(method: "renderDiff", base64String: base64)
+
+  #expect(script.contains("atob('\(base64)')"))
+  #expect(script.contains("Uint8Array.from"))
+  #expect(script.contains("new TextDecoder('utf-8')"))
+  #expect(script.contains("window.pierreBridge.renderDiff(input)"))
+  // JSON.parse must consume the UTF-8 decoded string, not the raw atob output.
+  #expect(!script.contains("JSON.parse(atob"))
+  let decodeIndex = try #require(script.range(of: "TextDecoder('utf-8')")?.lowerBound)
+  let parseIndex = try #require(script.range(of: "JSON.parse")?.lowerBound)
+  #expect(decodeIndex < parseIndex)
+}
+
 @Test func annotationBridgePreservesScrollWithoutForcedRerender() throws {
   let html = DiffHTMLTemplate.generateHTML()
   let setAnnotationsRange = try #require(html.range(of: "setAnnotations"))
